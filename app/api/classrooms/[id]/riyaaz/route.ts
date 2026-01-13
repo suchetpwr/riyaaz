@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { normalizeDate } from '@/lib/utils';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const createRiyaazSchema = z.object({
   date: z.string(),
   durationMinutes: z.number().min(1),

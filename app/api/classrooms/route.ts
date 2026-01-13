@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { generateJoinCode } from '@/lib/utils';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const createClassroomSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),

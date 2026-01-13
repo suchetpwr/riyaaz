@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { calculateStreaks, calculatePoints } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 // GET /api/classrooms/[id]/stats - Get student stats for a specific classroom
 export async function GET(
   req: NextRequest,

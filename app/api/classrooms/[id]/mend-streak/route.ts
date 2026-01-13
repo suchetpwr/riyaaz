@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { calculatePoints } from '@/lib/utils';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const mendStreakSchema = z.object({
   missedDate: z.string(), // ISO date string of the missed day to mend
 });
