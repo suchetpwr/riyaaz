@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // GET /api/classrooms/student - Get all classrooms for the logged-in student
 export async function GET(req: NextRequest) {
