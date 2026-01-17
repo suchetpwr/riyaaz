@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+const updateClassroomSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
 
 // GET /api/classrooms/[id] - Get classroom details
 export async function GET(
@@ -79,6 +85,73 @@ export async function GET(
     }
   } catch (error) {
     console.error('Get classroom error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/classrooms/[id] - Update classroom
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session?.user || session.user.role !== 'TEACHER') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const data = updateClassroomSchema.parse(body);
+    const classroomId = params.id;
+
+    // Verify ownership
+    const classroom = await prisma.classroom.findFirst({
+      where: {
+        id: classroomId,
+        teacherId: session.user.id,
+      },
+    });
+
+    if (!classroom) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    // Update classroom
+    const updatedClassroom = await prisma.classroom.update({
+      where: { id: classroomId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.description !== undefined && { description: data.description }),
+      },
+      include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(updatedClassroom);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+    console.error('Update classroom error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

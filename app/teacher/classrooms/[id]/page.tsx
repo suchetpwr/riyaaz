@@ -46,6 +46,8 @@ export default function TeacherClassroomPage({ params }: { params: { id: string 
   const [notes, setNotes] = useState<any[]>([]);
   const [showNoteForm, setShowNoteForm] = useState(false);
   const [noteData, setNoteData] = useState({ title: '', content: '', recordingUrl: '' });
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editData, setEditData] = useState({ name: '', description: '' });
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -74,6 +76,47 @@ export default function TeacherClassroomPage({ params }: { params: { id: string 
       console.error('Failed to fetch data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClassroom = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`/api/classrooms/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editData),
+      });
+
+      if (response.ok) {
+        const updatedClassroom = await response.json();
+        setClassroom(updatedClassroom);
+        setShowEditForm(false);
+      }
+    } catch (err) {
+      console.error('Failed to update classroom:', err);
+    }
+  };
+
+  const handleRemoveStudent = async (studentId: string, studentName: string) => {
+    if (!window.confirm(`Are you sure you want to remove ${studentName} from this classroom?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/classrooms/${params.id}/students/${studentId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        // Refresh data
+        fetchData();
+      } else {
+        alert('Failed to remove student');
+      }
+    } catch (err) {
+      console.error('Failed to remove student:', err);
+      alert('Failed to remove student');
     }
   };
 
@@ -154,10 +197,60 @@ export default function TeacherClassroomPage({ params }: { params: { id: string 
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">{classroom.name}</h1>
-          {classroom.description && (
-            <p className="text-gray-600">{classroom.description}</p>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">{classroom.name}</h1>
+              {classroom.description && (
+                <p className="text-gray-600">{classroom.description}</p>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setEditData({
+                  name: classroom.name,
+                  description: classroom.description || '',
+                });
+                setShowEditForm(!showEditForm);
+              }}
+              className="btn btn-secondary"
+            >
+              {showEditForm ? 'Cancel' : 'Edit Classroom'}
+            </button>
+          </div>
+
+          {showEditForm && (
+            <form onSubmit={handleEditClassroom} className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Classroom Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    className="input"
+                    value={editData.name}
+                    onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    className="input"
+                    rows={3}
+                    value={editData.description}
+                    onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  />
+                </div>
+                <button type="submit" className="btn btn-primary">
+                  Update Classroom
+                </button>
+              </div>
+            </form>
           )}
+
           <div className="mt-4 flex items-center gap-4">
             <span className="text-sm text-gray-600">
               Join Code:{' '}
@@ -186,6 +279,7 @@ export default function TeacherClassroomPage({ params }: { params: { id: string 
                         <th className="text-left py-3 px-4">Current Streak</th>
                         <th className="text-left py-3 px-4">Longest Streak</th>
                         <th className="text-left py-3 px-4">Last Practiced</th>
+                        <th className="text-left py-3 px-4">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -208,6 +302,14 @@ export default function TeacherClassroomPage({ params }: { params: { id: string 
                             {entry.lastPracticedDate
                               ? new Date(entry.lastPracticedDate).toLocaleDateString()
                               : 'Never'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => handleRemoveStudent(entry.studentId, entry.studentName)}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium"
+                            >
+                              Remove
+                            </button>
                           </td>
                         </tr>
                       ))}

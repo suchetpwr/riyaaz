@@ -32,6 +32,15 @@ interface Stats {
   lastPracticedDate: string | null;
 }
 
+interface LeaderboardEntry {
+  studentId: string;
+  studentName: string;
+  currentStreak: number;
+  longestStreak: number;
+  totalPoints: number;
+  lastPracticedDate: string | null;
+}
+
 export default function StudentClassroomPage({ params }: { params: { id: string } }) {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -39,6 +48,7 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
   const [stats, setStats] = useState<Stats | null>(null);
   const [entries, setEntries] = useState<RiyaazEntry[]>([]);
   const [homeworks, setHomeworks] = useState<Homework[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showRiyaazForm, setShowRiyaazForm] = useState(false);
   const [riyaazData, setRiyaazData] = useState({
@@ -64,12 +74,13 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
 
   const fetchData = async () => {
     try {
-      const [classroomRes, statsRes, entriesRes, homeworkRes, notesRes] = await Promise.all([
+      const [classroomRes, statsRes, entriesRes, homeworkRes, notesRes, leaderboardRes] = await Promise.all([
         fetch(`/api/classrooms/${params.id}`),
         fetch(`/api/classrooms/${params.id}/stats`),
         fetch(`/api/classrooms/${params.id}/riyaaz`),
         fetch(`/api/classrooms/${params.id}/homework`),
         fetch(`/api/classrooms/${params.id}/notes`),
+        fetch(`/api/classrooms/${params.id}/leaderboard`),
       ]);
 
       if (classroomRes.ok) setClassroom(await classroomRes.json());
@@ -77,6 +88,7 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
       if (entriesRes.ok) setEntries(await entriesRes.json());
       if (homeworkRes.ok) setHomeworks(await homeworkRes.json());
       if (notesRes.ok) setNotes(await notesRes.json());
+      if (leaderboardRes.ok) setLeaderboard(await leaderboardRes.json());
     } catch (err) {
       console.error('Failed to fetch data:', err);
     } finally {
@@ -94,7 +106,6 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
           ...riyaazData,
           durationMinutes: parseInt(riyaazData.durationMinutes.toString()),
           recordingUrl: riyaazData.recordingUrl || undefined,
-          notes: riyaazData.notes || undefined,
         }),
       });
 
@@ -255,6 +266,68 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
           </div>
         )}
 
+        {/* Leaderboard Section */}
+        <div className="card mb-8">
+          <h2 className="text-2xl font-bold mb-6">Leaderboard</h2>
+          {leaderboard.length === 0 ? (
+            <p className="text-gray-600">No students enrolled yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Rank</th>
+                    <th className="text-left py-3 px-4">Student</th>
+                    <th className="text-left py-3 px-4">Points</th>
+                    <th className="text-left py-3 px-4">Current Streak</th>
+                    <th className="text-left py-3 px-4">Longest Streak</th>
+                    <th className="text-left py-3 px-4">Last Practiced</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((entry, index) => {
+                    const isCurrentUser = entry.studentId === session.user.id;
+                    return (
+                      <tr
+                        key={entry.studentId}
+                        className={`border-b hover:bg-gray-50 ${
+                          isCurrentUser ? 'bg-primary-50 font-semibold' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-4 font-semibold">#{index + 1}</td>
+                        <td className="py-3 px-4">
+                          {entry.studentName}
+                          {isCurrentUser && (
+                            <span className="ml-2 text-xs bg-primary-600 text-white px-2 py-1 rounded">
+                              You
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-primary-600">{entry.totalPoints}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          {entry.currentStreak > 0 ? (
+                            <span className="text-green-600">🔥 {entry.currentStreak}</span>
+                          ) : (
+                            '0'
+                          )}
+                        </td>
+                        <td className="py-3 px-4">{entry.longestStreak}</td>
+                        <td className="py-3 px-4 text-sm text-gray-600">
+                          {entry.lastPracticedDate
+                            ? new Date(entry.lastPracticedDate).toLocaleDateString()
+                            : 'Never'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Riyaaz Section */}
           <div>
@@ -328,14 +401,15 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Notes
+                        Notes *
                       </label>
                       <textarea
+                        required
                         className="input"
                         rows={3}
                         value={riyaazData.notes}
                         onChange={(e) => setRiyaazData({ ...riyaazData, notes: e.target.value })}
-                        placeholder="Any observations or notes..."
+                        placeholder="What did you practice today? (Required)"
                       />
                     </div>
                     <button type="submit" className="btn btn-primary">

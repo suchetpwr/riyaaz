@@ -12,7 +12,7 @@ const createRiyaazSchema = z.object({
   durationMinutes: z.number().min(1),
   raga: z.string().min(1),
   recordingUrl: z.string().url().optional(),
-  notes: z.string().optional(),
+  notes: z.string().min(1, 'Notes are required'),
 });
 
 // GET /api/classrooms/[id]/riyaaz - Get riyaaz entries for current student
