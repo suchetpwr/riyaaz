@@ -97,6 +97,19 @@ export async function POST(
 
     const normalizedDate = normalizeDate(date);
 
+    // Validate date - cannot log future dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const logDate = new Date(normalizedDate);
+    logDate.setHours(0, 0, 0, 0);
+
+    if (logDate > today) {
+      return NextResponse.json(
+        { error: 'Cannot log riyaaz for future dates' },
+        { status: 400 }
+      );
+    }
+
     // Create new entry (allows multiple per day)
     const entry = await prisma.riyaazEntry.create({
       data: {

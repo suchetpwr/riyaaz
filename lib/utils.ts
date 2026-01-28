@@ -116,10 +116,17 @@ export function generateJoinCode(): string {
 }
 
 /**
- * Normalize a date to midnight (for consistent date comparisons)
+ * Normalize a date to midnight UTC (for consistent date comparisons)
+ * This prevents timezone issues when working with date-only values
  */
 export function normalizeDate(date: Date | string): Date {
+  // If date is a string in YYYY-MM-DD format, parse it properly
+  if (typeof date === 'string') {
+    const [year, month, day] = date.split('T')[0].split('-').map(Number);
+    return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+  }
+  
+  // If it's already a Date object, normalize to UTC midnight
   const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d;
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0));
 }

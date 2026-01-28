@@ -221,50 +221,56 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
         </div>
 
         {/* Mend Streak Section */}
-        {stats.availablePoints >= 50 && (
-          <div className="card mb-8 border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-orange-50">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  🔧 Streak Mend Available
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Missed a day? Use 50 points to mend your streak and keep it going!
-                </p>
-              </div>
+        <div className={`card mb-8 border-2 ${
+          stats.availablePoints >= 50 
+            ? 'border-yellow-400 bg-gradient-to-r from-yellow-50 to-orange-50' 
+            : 'border-gray-300 bg-gray-50'
+        }`}>
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-1">
+                🔧 Streak Mend {stats.availablePoints >= 50 ? 'Available' : 'Feature'}
+              </h3>
+              <p className="text-sm text-gray-600">
+                {stats.availablePoints >= 50 
+                  ? 'Missed a day? Use 50 points to mend your streak and keep it going!' 
+                  : `Earn ${50 - stats.availablePoints} more points to unlock streak mending (50 points needed)`}
+              </p>
+            </div>
+            {stats.availablePoints >= 50 && (
               <button
                 onClick={() => setShowMendForm(!showMendForm)}
                 className="btn btn-secondary"
               >
                 {showMendForm ? 'Cancel' : 'Mend Streak'}
               </button>
-            </div>
-
-            {showMendForm && (
-              <form onSubmit={handleMendStreak} className="mt-4 pt-4 border-t border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select the missed date to mend:
-                </label>
-                <div className="flex gap-3">
-                  <input
-                    type="date"
-                    required
-                    className="input flex-1"
-                    value={mendDate}
-                    onChange={(e) => setMendDate(e.target.value)}
-                    max={new Date(Date.now() - 86400000).toISOString().split('T')[0]}
-                  />
-                  <button type="submit" className="btn btn-primary">
-                    Mend (50 pts)
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  * You can only mend past dates where you didn't practice
-                </p>
-              </form>
             )}
           </div>
-        )}
+
+          {showMendForm && stats.availablePoints >= 50 && (
+            <form onSubmit={handleMendStreak} className="mt-4 pt-4 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select the missed date to mend:
+              </label>
+              <div className="flex gap-3">
+                <input
+                  type="date"
+                  required
+                  className="input flex-1"
+                  value={mendDate}
+                  onChange={(e) => setMendDate(e.target.value)}
+                  max={new Date(Date.now() - 86400000).toISOString().split('T')[0]}
+                />
+                <button type="submit" className="btn btn-primary">
+                  Mend (50 pts)
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                * You can only mend past dates where you didn't practice
+              </p>
+            </form>
+          )}
+        </div>
 
         {/* Leaderboard Section */}
         <div className="card mb-8">
@@ -355,7 +361,11 @@ export default function StudentClassroomPage({ params }: { params: { id: string 
                         className="input"
                         value={riyaazData.date}
                         onChange={(e) => setRiyaazData({ ...riyaazData, date: e.target.value })}
+                        max={new Date().toISOString().split('T')[0]}
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        * Cannot log future dates
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
